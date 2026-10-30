@@ -1,7 +1,7 @@
 #!/bin/bash
 # Build the ESP Flasher image on your own Docker host (e.g. Unraid) and (re)start the container, with rollback.
 # Reads tools/config.local.json (copy config.example.json). Not needed for the Home Assistant app.
-#   tools/deploy.sh               build + swap the container, then publish your firmware builds (tools/publish.py)
+#   tools/deploy.sh               build + swap the container, then upload your firmware builds (publish.py --upload)
 #   tools/deploy.sh --no-fw       only the container
 #   tools/deploy.sh --test 8444   a separate test container on port 8444 with its own empty settings (/tmp)
 set -euo pipefail
@@ -79,4 +79,4 @@ EOF
 </Container>
 EOF
 
-[ "${1:-}" = "--no-fw" ] || python3 tools/publish.py
+[ "${1:-}" = "--no-fw" ] || python3 tools/publish.py --upload

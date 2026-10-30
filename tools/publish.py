@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Collect the firmwares in firmwares.json into the app's firmware folder (esp-flasher/firmware, shipped in the image).
 
-  tools/publish.py --local    only build esp-flasher/firmware (commit it; the image and the Home Assistant app use it)
-  tools/publish.py            also upload it to your own server's <appdata>/firmware for a live test (needs
-                              tools/config.local.json - see config.example.json; marks it ".local" so it wins over the image)
+  tools/publish.py            build esp-flasher/firmware (commit it, bump the app version; the image and the app use it)
+  tools/publish.py --upload   also upload it to your own Docker host's <appdata>/firmware (needs tools/config.local.json -
+                              see config.example.json; marks it ".local" so it wins over the firmware in the image)
 
 idf sources use the build folder's flash_args (bootloader, partition table, otadata and app as separate parts, so a flash
 without "Erase device" leaves NVS and the Zigbee pairing alone). manifest_url sources are downloaded as they are released.
@@ -163,10 +163,10 @@ def main():
     json.dump({"generated": datetime.datetime.now().isoformat(timespec="seconds"), "firmwares": catalog},
               open(os.path.join(OUT, "catalog.json"), "w"), ensure_ascii=False, indent=2)
 
-    if "--local" in sys.argv:
+    if "--upload" not in sys.argv:
         return
     if not CFG.get("host"):
-        sys.exit("Upload kræver tools/config.local.json (se config.example.json) - eller brug --local")
+        sys.exit("Upload kræver tools/config.local.json (se config.example.json)")
     host, remote = CFG["host"], CFG.get("appdata", "/mnt/user/appdata/esp-flasher").rstrip("/") + "/firmware"
     key = tempfile.mktemp()
     shutil.copy(os.path.expanduser(CFG["ssh_key"]), key)

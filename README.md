@@ -69,10 +69,13 @@ Firmwaren beskrives i `firmwares.json`, og `tools/publish.py` samler den i `esp-
 
 ```sh
 cp tools/config.example.json tools/config.local.json   # din server, nøgle og ESPHome (ikke i git)
-tools/publish.py --local     # byg esp-flasher/firmware
-tools/publish.py             # ... og læg den på din egen server til test (.local vinder over imagets)
+tools/publish.py             # byg esp-flasher/firmware
+tools/publish.py --upload    # ... og læg den på din egen Docker-vært (.local vinder over imagets)
 tools/deploy.sh              # byg imaget på din Docker-vært og skift containeren (med rollback)
 tools/deploy.sh --test 8444  # en separat testcontainer med tomme indstillinger
 ```
 
-Bump `version` i `esp-flasher/config.yaml` og skriv i `esp-flasher/CHANGELOG.md`, når appen skal opdateres i Home Assistant.
+Ny firmware til Home Assistant-appen:
+1. Kør `tools/publish.py`.
+2. Bump `version` i `esp-flasher/config.yaml`, og skriv i `esp-flasher/CHANGELOG.md`.
+3. Commit og push. Home Assistant viser så en opdatering til appen.
