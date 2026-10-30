@@ -1,0 +1,256 @@
+{
+  "firmwares": [
+    {
+      "id": "shs-h2-ld2410",
+      "name": "Zigbee Presence",
+      "chip": "ESP32-H2",
+      "radars": [
+        "LD2410"
+      ],
+      "kind": "zigbee",
+      "kindLabel": "Zigbee router · Z2M",
+      "status": "testet",
+      "summary": "Presence-sensor til Zigbee2MQTT med samme indstillinger som Wi-Fi HPS. Fungerer også som Zigbee-router.",
+      "features": [
+        "Presence, bevægelse/stille, lys, afstande og energier",
+        "3 afstandszoner, gate 0–8, timeout, lysstyring",
+        "Farve-LED på printet (lys i HA)",
+        "HPS-baseline som standard",
+        "LED-signaler med effekter (v1.7.0)",
+        "Selvhelbredelse: genstarter selv ved mistet forbindelse eller frossen Zigbee (v1.8.2)"
+      ],
+      "wiring": [
+        [
+          "LD2410 TX",
+          "GPIO13"
+        ],
+        [
+          "LD2410 RX",
+          "GPIO14"
+        ],
+        [
+          "LD2410 VCC",
+          "5V"
+        ],
+        [
+          "LD2410 GND",
+          "GND"
+        ],
+        [
+          "RGB-LED (på printet)",
+          "GPIO8"
+        ]
+      ],
+      "after": "Ny enhed: åbn Permit join i Zigbee2MQTT – den parrer sig selv. Opdatering uden Erase device: bevarer parring og indstillinger.",
+      "source": {
+        "type": "idf",
+        "project": "../shs-h2",
+        "build": "build",
+        "header": "main/shs01.h"
+      },
+      "ota": "Efter første flash opdateres den trådløst i Zigbee2MQTT (OTA-fanen) – ingen USB.",
+      "changelog": [
+        {
+          "version": "1.8.2-h2",
+          "date": "2026-10-27",
+          "title": "Selvhelbredelse",
+          "items": [
+            "Selvhelbredelse: sensoren spørger koordinatoren hvert 90. sekund. Har den ikke svaret i 10 min, genstarter den og kommer tilbage på netværket med de gemte nøgler – ingen ny parring",
+            "Genstarter også selv, hvis Zigbee-delen har hængt i 3 min, hvis programmet har hængt i 2 min, eller hvis Zigbee ikke er kommet i gang efter 15 min",
+            "Forsigtig ved lange udfald: venter dobbelt så længe for hver genstart i træk (højst 2 timer) og lidt forskelligt fra sensor til sensor, så de ikke genstarter samtidig. Et svar fra koordinatoren nulstiller det",
+            "Nye diagnosefelter i Zigbee2MQTT/HA: seneste genstartsårsag, antal selvgenstarter siden strøm på og hvad der udløste den sidste",
+            "Rettet: v1.8.1 kom aldrig i gang efter opdateringen (genstartede ved sin første rapport og rullede tilbage). v1.8.2 opretter selv de manglende rapport-pladser",
+            "Afprøvet på Garage 2: genstart ved simuleret mistet forbindelse efter ca. 11 min og ved frossen Zigbee efter ca. 3 min"
+          ]
+        },
+        {
+          "version": "1.5–1.7",
+          "title": "Tidligere",
+          "items": [
+            "LED-signaler: breathe, pulse, blink, hurtig blink og alarm-dobbeltblink med egen farve, lysstyrke og timeout - styret fra HA med én kommando",
+            "Endnu mindre Zigbee-trafik: afstande, energier og confidence sendes kun med 'Detail reporting' slået til (slukker selv efter 30 min)",
+            "Kalibrér tomt rum: forlad rummet, og sensoren sætter selv gate-tærsklerne lige over støjen",
+            "LED-tilstande: manuel (lys i HA), presence (lyser når nogen er der) eller status (blinker uden Zigbee)",
+            "Meget mindre Zigbee-trafik: målinger højst hvert 10. sekund og kun ved reelle ændringer",
+            "Farve-LED med lysstyrke, husker indstillingen efter genstart",
+            "Afstandszoner med hysterese, så de ikke flimrer ved grænsen"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shs-h2-dual",
+      "name": "Zigbee Presence (dual radar)",
+      "chip": "ESP32-H2",
+      "radars": [
+        "LD2410",
+        "LD2450"
+      ],
+      "kind": "zigbee",
+      "kindLabel": "Zigbee router · Z2M",
+      "status": "Ikke testet endnu",
+      "summary": "Som Zigbee Presence, plus LD2450 med position, op til 3 personer og 5 zoner i rummet.",
+      "features": [
+        "Alt fra LD2410-versionen",
+        "LD2450: X/Y-position og afstand for op til 3 mål",
+        "Op til 5 zoner (rektangel eller polygon) og LD2450-krydstjek",
+        "LED-signaler med effekter (v1.7.0)",
+        "Selvhelbredelse: genstarter selv ved mistet forbindelse eller frossen Zigbee (v1.8.2)"
+      ],
+      "wiring": [
+        [
+          "LD2410 TX",
+          "GPIO13"
+        ],
+        [
+          "LD2410 RX",
+          "GPIO14"
+        ],
+        [
+          "LD2450 TX",
+          "GPIO0"
+        ],
+        [
+          "LD2450 RX",
+          "GPIO1"
+        ],
+        [
+          "Begge VCC",
+          "5V"
+        ],
+        [
+          "Begge GND",
+          "GND"
+        ]
+      ],
+      "after": "Ny enhed: åbn Permit join i Zigbee2MQTT. Z2M genkender den som SHS_H2_DUAL.",
+      "source": {
+        "type": "idf",
+        "project": "../shs-h2",
+        "build": "build-dual",
+        "header": "main/shs01.h"
+      },
+      "ota": "Efter første flash opdateres den trådløst i Zigbee2MQTT (OTA-fanen) – ingen USB.",
+      "changelog": [
+        {
+          "version": "1.8.2-h2",
+          "date": "2026-10-27",
+          "title": "Selvhelbredelse",
+          "items": [
+            "Selvhelbredelse: sensoren spørger koordinatoren hvert 90. sekund. Har den ikke svaret i 10 min, genstarter den og kommer tilbage på netværket med de gemte nøgler – ingen ny parring",
+            "Genstarter også selv, hvis Zigbee-delen har hængt i 3 min, hvis programmet har hængt i 2 min, eller hvis Zigbee ikke er kommet i gang efter 15 min",
+            "Forsigtig ved lange udfald: venter dobbelt så længe for hver genstart i træk (højst 2 timer) og lidt forskelligt fra sensor til sensor, så de ikke genstarter samtidig. Et svar fra koordinatoren nulstiller det",
+            "Nye diagnosefelter i Zigbee2MQTT/HA: seneste genstartsårsag, antal selvgenstarter siden strøm på og hvad der udløste den sidste",
+            "Rettet: v1.8.1 kom aldrig i gang efter opdateringen (genstartede ved sin første rapport og rullede tilbage). v1.8.2 opretter selv de manglende rapport-pladser",
+            "Afprøvet på Garage 2: genstart ved simuleret mistet forbindelse efter ca. 11 min og ved frossen Zigbee efter ca. 3 min"
+          ]
+        },
+        {
+          "version": "1.5–1.7",
+          "title": "Tidligere",
+          "items": [
+            "LED-signaler: breathe, pulse, blink, hurtig blink og alarm-dobbeltblink med egen farve, lysstyrke og timeout - styret fra HA med én kommando",
+            "Endnu mindre Zigbee-trafik: afstande, energier og confidence sendes kun med 'Detail reporting' slået til (slukker selv efter 30 min)",
+            "Kalibrér tomt rum: forlad rummet, og sensoren sætter selv gate-tærsklerne lige over støjen",
+            "LED-tilstande: manuel (lys i HA), presence (lyser når nogen er der) eller status (blinker uden Zigbee)",
+            "Meget mindre Zigbee-trafik: målinger højst hvert 10. sekund og kun ved reelle ændringer",
+            "Farve-LED med lysstyrke, husker indstillingen efter genstart",
+            "Afstandszoner med hysterese, så de ikke flimrer ved grænsen"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "qlima-control-c3",
+      "name": "Qlima Control",
+      "chip": "ESP32-C3",
+      "radars": [],
+      "kind": "wifi",
+      "kindLabel": "Wi-Fi · ESPHome",
+      "status": "testet",
+      "summary": "Styrer en Qlima/Midea-varmepumpe over Wi-Fi og Home Assistant (Qlima Control-integrationen).",
+      "features": [
+        "Wi-Fi sættes direkte i flash-dialogen (Improv)",
+        "Opdateres derefter trådløst fra Home Assistant"
+      ],
+      "wiring": [
+        [
+          "Hvid (D-, anlæg TX)",
+          "GPIO7 (RX)"
+        ],
+        [
+          "Grøn (D+, anlæg RX)",
+          "GPIO6 (TX)"
+        ],
+        [
+          "IR-diode + 470 Ω",
+          "GPIO10"
+        ],
+        [
+          "Temp. udblæsning",
+          "GPIO5"
+        ],
+        [
+          "Temp. indsugning",
+          "GPIO4"
+        ],
+        [
+          "5V / GND",
+          "5V / GND"
+        ]
+      ],
+      "after": "Vælg dit Wi-Fi i dialogen efter flash. Enheden dukker op i Home Assistant under ESPHome.",
+      "source": {
+        "type": "manifest_url",
+        "url": "https://mrdonnii.github.io/qlima-control/firmware/qlima-control-esp32c3.manifest.json"
+      }
+    },
+    {
+      "id": "tesla-ble-proxy-c3",
+      "name": "Tesla BLE-proxy",
+      "chip": "ESP32-C3",
+      "radars": [],
+      "kind": "wifi",
+      "kindLabel": "Wi-Fi · ESPHome · Bluetooth-proxy",
+      "status": "Ikke testet på hardware endnu",
+      "summary": "Bluetooth-proxy ved carporten, så Home Assistant taler direkte med Teslaen over Bluetooth (Tesla BLE-integrationen) – uden Teslas sky.",
+      "features": [
+        "Standard ESPHome Bluetooth-proxy med aktive forbindelser",
+        "Flere proxyer kan køre side om side (hver får MAC-endelse i navnet) – HA bruger den med bedst signal",
+        "Bilnøglen ligger i Home Assistant – proxyen sender kun videre",
+        "Wi-Fi sættes direkte i flash-dialogen (Improv) eller via hotspottet \"Tesla BLE-proxy\"",
+        "Opdateres derefter trådløst fra ESPHome Builder (krypteret med API-nøglen)"
+      ],
+      "wiring": [
+        [
+          "USB-C",
+          "5 V strøm (ingen ledninger ellers)"
+        ]
+      ],
+      "after": "Vælg dit Wi-Fi i dialogen efter flash. Sæt den til strøm så tæt på bilens holdeplads som muligt (helst under 5–8 m, uden mur imellem). Den dukker op i Home Assistant under ESPHome – tilføj den, så finder Home Assistant bilen.",
+      "source": {
+        "type": "esphome",
+        "yaml": "../tesla-ble-proxy/tesla-ble-proxy.yaml",
+        "name": "tesla-ble-proxy"
+      },
+      "changelog": [
+        {
+          "version": "1.0.1",
+          "date": "2026-10-30",
+          "title": "Flere proxyer",
+          "items": [
+            "Hver proxy får sit eget navn (\"Tesla BLE-proxy\" + de sidste 6 tegn af MAC-adressen), så flere C3'ere kan flashes med samme firmware"
+          ]
+        },
+        {
+          "version": "1.0.0",
+          "date": "2026-10-30",
+          "title": "Første version",
+          "items": [
+            "Bluetooth-proxy til Tesla BLE på ESP32-C3 (fx de gamle Wi-Fi HPS-print)"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+configuration:
+  name:
+    name: Navn
+    description: Vises øverst på flasher-siden.
+  wifi_ssid:
+    name: Wi-Fi-navn (SSID)
+    description: Det 2,4 GHz-netværk, nye Wi-Fi-enheder skal på. Valgfrit.
+  wifi_password:
+    name: Wi-Fi-kode
+    description: Sendes til enheden over USB efter flash (Improv). Gemmes kun i Home Assistant og kommer med i dens backup.

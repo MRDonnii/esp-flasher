@@ -1,0 +1,4 @@
+# Home Assistant app repository: Settings → Apps → App store → ⋮ → Repositories → add this repository's URL
+name: ESP Flasher
+url: https://github.com/MRDonnii/esp-flasher
+maintainer: MRDonnii

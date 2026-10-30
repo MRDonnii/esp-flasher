@@ -1,0 +1,28 @@
+{
+  "name": "Zigbee Presence",
+  "version": "1.8.2-h2",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32-H2",
+      "parts": [
+        {
+          "path": "bootloader.bin",
+          "offset": 0
+        },
+        {
+          "path": "partition-table.bin",
+          "offset": 32768
+        },
+        {
+          "path": "app.bin",
+          "offset": 65536
+        },
+        {
+          "path": "ota_data_initial.bin",
+          "offset": 1658880
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "name": "Qlima Control",
+  "version": "1.4.5",
+  "new_install_prompt_erase": true,
+  "home_assistant_domain": "esphome",
+  "builds": [
+    {
+      "chipFamily": "ESP32-C3",
+      "parts": [
+        {
+          "path": "qlima-control-esp32c3.factory.bin",
+          "offset": 0
+        }
+      ]
+    }
+  ]
+}

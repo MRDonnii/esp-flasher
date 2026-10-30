@@ -1,0 +1,10 @@
+configuration:
+  name:
+    name: Name
+    description: Shown at the top of the flasher page.
+  wifi_ssid:
+    name: Wi-Fi name (SSID)
+    description: The 2.4 GHz network new Wi-Fi devices should join. Optional.
+  wifi_password:
+    name: Wi-Fi password
+    description: Sent to the device over USB after flashing (Improv). Kept only in Home Assistant and its backups.

@@ -1,0 +1,6 @@
+# local maintainer settings and build output
+tools/config.local.json
+out/
+__pycache__/
+*.pyc
+.esphome/

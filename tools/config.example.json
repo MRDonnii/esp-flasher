@@ -1,0 +1,10 @@
+{
+  "_doc": "Copy to tools/config.local.json (not in git). Only needed to build your own firmware or deploy to your own server.",
+  "host": "root@192.168.1.10",
+  "ssh_key": "~/.ssh/id_ed25519",
+  "port": 8443,
+  "appdata": "/mnt/user/appdata/esp-flasher",
+  "hosts": "IP:192.168.1.10,DNS:nas.local",
+  "esphome": "~/.local/share/esphome/bin/esphome",
+  "secrets_yaml": "~/esphome/secrets.yaml"
+}

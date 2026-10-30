@@ -1,0 +1,17 @@
+{
+  "name": "Tesla BLE-proxy",
+  "version": "1.0.1",
+  "new_install_prompt_erase": true,
+  "home_assistant_domain": "esphome",
+  "builds": [
+    {
+      "chipFamily": "ESP32-C3",
+      "parts": [
+        {
+          "path": "firmware.factory.bin",
+          "offset": 0
+        }
+      ]
+    }
+  ]
+}
