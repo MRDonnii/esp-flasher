@@ -14,12 +14,7 @@ Der er ingen personlige indstillinger i repoet eller i firmwaren. Navn, Wi-Fi og
 
 Den nemmeste vej er at køre den som app. Den åbnes i Home Assistants sidepanel og bruger Home Assistants egen https, så du ikke skal lave et certifikat.
 
-1. **Indstillinger → Apps → App store → ⋮ → Repositories**, og tilføj repoet.
-   - Repoet er privat, så adressen skal indeholde en læse-token:
-     ```
-     https://<github-bruger>:<token>@github.com/MRDonnii/esp-flasher
-     ```
-   - Tokenen laves på GitHub under **Settings → Developer settings → Fine-grained tokens**, med kun **Contents: Read** på dette repo.
+1. **Indstillinger → Apps → App store → ⋮ → Repositories**, og tilføj `https://github.com/MRDonnii/esp-flasher`.
 2. Installér **ESP Flasher**.
 3. Udfyld **Konfiguration**: navn og evt. Wi-Fi.
 4. Start appen, og slå **Vis i sidepanel** til.
