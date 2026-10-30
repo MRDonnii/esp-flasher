@@ -1,5 +1,5 @@
 name: ESP Flasher
-version: "2.0.0"
+version: "2.1.0"
 slug: esp_flasher
 description: Flash egne ESP-firmwares (Zigbee-presence, Qlima Control, Tesla BLE-proxy) via USB direkte fra browseren
 url: https://github.com/MRDonnii/esp-flasher
@@ -18,7 +18,9 @@ options:
   name: Hjemme
   wifi_ssid: ""
   wifi_password: ""
+  live_firmware: true
 schema:
   name: str
   wifi_ssid: str?
   wifi_password: password?
+  live_firmware: bool

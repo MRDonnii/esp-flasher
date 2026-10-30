@@ -26,6 +26,8 @@ import time
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+import fwsync
+
 CONFIG = os.environ.get("FLASHER_CONFIG", "/config")
 SETTINGS = os.path.join(CONFIG, "settings.json")
 SECRETS = os.path.join(CONFIG, "secrets.json")
@@ -94,6 +96,20 @@ def secret_store():
         o = ha_options()
         return {"admin_hash": "ha", "wifi_ssid": o.get("wifi_ssid", ""), "wifi_password": o.get("wifi_password", "")}
     return _read(SECRETS, {})
+
+
+def firmware_url():
+    """Where new firmware is fetched from: the public catalog on GitHub unless turned off."""
+    if HA_MODE:
+        return fwsync.DEFAULT_URL if ha_options().get("live_firmware", True) else ""
+    url = os.environ.get("FLASHER_FIRMWARE_URL", fwsync.DEFAULT_URL).strip()
+    return "" if url.lower() in ("", "off", "0", "false", "no") else url
+
+
+def firmware_status():
+    st = fwsync.state
+    return {"source": st["source"], "live": st["live"], "generated": st["generated"], "error": st["error"],
+            "checked": int(st["checked"]), "changed": int(st["changed"])}
 
 
 def setup_done():
@@ -257,6 +273,7 @@ class Api(BaseHTTPRequestHandler):
                 "wifi_ssid": sec.get("wifi_ssid", "") if sec and self.logged_in(sec) else "",
                 "has_wifi": bool(sec.get("wifi_ssid")),
                 "version": VERSION,
+                "firmware": firmware_status(),
             })
         if self.path == "/api/settings":
             if not self.require_login(sec):
@@ -274,6 +291,9 @@ class Api(BaseHTTPRequestHandler):
             data = self.body()
         except ValueError as err:
             return self.send(400, {"error": str(err)})
+        if self.path == "/api/firmware/check":   # harmless, so no login; at most one real check a minute
+            changed = time.time() - fwsync.state["checked"] >= 60 and fwsync.check()
+            return self.send(200, {**firmware_status(), "updated": bool(changed)})
         if HA_MODE and self.path in ("/api/setup", "/api/login", "/api/reset"):
             return self.send(409, {"error": HA_ONLY})
         with _lock:
@@ -389,5 +409,6 @@ class Api(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     os.makedirs(CONFIG, exist_ok=True)
+    fwsync.start(firmware_url(), local_override=os.environ.get("FLASHER_FW_LOCAL") == "1")
     port = int(os.environ.get("FLASHER_API_PORT", "8081"))
     ThreadingHTTPServer(("127.0.0.1", port), Api).serve_forever()

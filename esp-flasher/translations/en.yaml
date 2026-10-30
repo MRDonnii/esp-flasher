@@ -8,3 +8,6 @@ configuration:
   wifi_password:
     name: Wi-Fi password
     description: Sent to the device over USB after flashing (Improv). Kept only in Home Assistant and its backups.
+  live_firmware:
+    name: Fetch new firmware automatically
+    description: Checks GitHub every half hour, so new firmware shows up without updating the app.

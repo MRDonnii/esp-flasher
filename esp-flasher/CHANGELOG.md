@@ -1,5 +1,15 @@
 # Ændringer
 
+## 2.1.0
+
+- Ny firmware kommer frem af sig selv. Appen tjekker GitHub hver halve time og henter kun det, der er ændret.
+  - Hver fil kontrolleres med kataloget, før den bruges.
+  - Skiftet sker på én gang, så siden aldrig viser en halv opdatering.
+  - Uden internet bruges den firmware, appen allerede har.
+- I bunden af siden står, hvornår firmwaren er fra. Der er også en knap, "Søg efter ny".
+- En side, der står åben, viser ny firmware, så snart den er hentet. Den skifter ikke midt i en flash.
+- Kan slås fra i Konfiguration ("Hent ny firmware automatisk").
+
 ## 2.0.0
 
 - Kan installeres som Home Assistant-app. Den åbnes i sidepanelet og bruger Home Assistants https, så der ikke skal noget certifikat til.

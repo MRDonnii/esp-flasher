@@ -75,7 +75,10 @@ tools/deploy.sh              # byg imaget på din Docker-vært og skift containe
 tools/deploy.sh --test 8444  # en separat testcontainer med tomme indstillinger
 ```
 
-Ny firmware til Home Assistant-appen:
-1. Kør `tools/publish.py`.
-2. Bump `version` i `esp-flasher/config.yaml`, og skriv i `esp-flasher/CHANGELOG.md`.
-3. Commit og push. Home Assistant viser så en opdatering til appen.
+**Ny firmware:** kør `tools/publish.py`, og commit + push `esp-flasher/firmware/`. Alle installationer henter den selv inden for en halv time, eller med det samme med **Søg efter ny**. Appen skal ikke opdateres.
+
+- Hver fil tjekkes mod kataloget (sha256), før den bruges.
+- Uden net bruges den firmware, der fulgte med.
+- Kan slås fra: HA-optionen `live_firmware`, eller Docker-variablen `FLASHER_FIRMWARE_URL=off`.
+
+**Ændringer i selve siden eller appen:** bump `version` i `esp-flasher/config.yaml`, og skriv i `esp-flasher/CHANGELOG.md`. Så tilbyder Home Assistant en opdatering.

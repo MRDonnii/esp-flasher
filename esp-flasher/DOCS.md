@@ -24,6 +24,12 @@ Wi-Fi-enheder kan få dit Wi-Fi sendt over USB lige efter flash med **Send Wi-Fi
 
 Koden gemmes kun i appens indstillinger i Home Assistant og kommer med i Home Assistants backup.
 
+## Ny firmware
+
+Appen tjekker GitHub hver halve time og henter ny firmware selv, så du ikke skal opdatere appen for at få den. Du kan også trykke **Søg efter ny** nederst på siden.
+
+Funktionen kan slås fra under **Hent ny firmware automatisk**. Så bruges den firmware, der fulgte med appen.
+
 ## Opdatering af enheder
 
 - **Zigbee-presence** opdateres trådløst i Zigbee2MQTT (OTA-fanen).

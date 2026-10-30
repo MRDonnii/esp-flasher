@@ -128,7 +128,44 @@ function renderHeader() {
     $('#btn-settings').hidden = !s.setup_done;
     $('#foot-version').textContent = `ESP Flasher ${s.version || ''}`.trim();
     $('#foot-cert').hidden = isHa();
+    renderFirmware();
 }
+
+// Firmware comes from GitHub while the app runs (api: fwsync), so a new build shows up without updating the app
+function renderFirmware() {
+    const f = state.status.firmware;
+    $('#foot-fw').hidden = !f;
+    if (!f) return;
+    const built = f.generated ? new Date(f.generated).toLocaleString('da-DK', {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'}) : '';
+    const src = {github: 'hentet fra GitHub', app: 'fra appen', local: 'lokal build'}[f.source] || '';
+    $('#fw-text').textContent = [built && `Firmware fra ${built}`, src, f.live && 'opdateres automatisk'].filter(Boolean).join(' · ');
+    $('#fw-text').title = f.error ? `Sidste tjek fejlede: ${f.error}`
+        : f.checked ? `Sidst tjekket ${new Date(f.checked * 1000).toLocaleTimeString('da-DK', {hour: '2-digit', minute: '2-digit'})}` : '';
+    $('#fw-check').hidden = !f.live;
+}
+
+async function loadCatalog() {
+    try {
+        const res = await fetch('firmware/catalog.json', {cache: 'no-store'});
+        state.list = (await res.json()).firmwares || [];
+    } catch (err) {
+        $('#list').innerHTML = `<p class="muted">Kunne ikke hente firmware-listen (${esc(err.message)}).</p>`;
+    }
+}
+
+$('#fw-check').addEventListener('click', async (ev) => {
+    const b = ev.currentTarget;
+    b.disabled = true; b.textContent = 'Søger …';
+    try {
+        const r = await api('api/firmware/check', {method: 'POST'});
+        state.status.firmware = r;
+        if (r.updated) { await loadCatalog(); render(); toast('Ny firmware er hentet'); }
+        else if (r.error) toast(`Kunne ikke tjekke GitHub: ${r.error}`, 'bad');
+        else toast('Du har den nyeste firmware');
+    } catch (err) { toast(err.message, 'bad'); }
+    b.disabled = false; b.textContent = 'Søg efter ny';
+    renderFirmware();
+});
 
 document.addEventListener('click', async (ev) => {
     const b = ev.target.closest('[data-copy]');
@@ -466,11 +503,15 @@ async function loadStatus() {
 }
 
 await loadStatus();
-try {
-    const res = await fetch('firmware/catalog.json', {cache: 'no-store'});
-    state.list = (await res.json()).firmwares || [];
-} catch (err) {
-    $('#list').innerHTML = `<p class="muted">Kunne ikke hente firmware-listen (${esc(err.message)}).</p>`;
-}
+await loadCatalog();
 render();
+// A page left open picks up firmware that arrived in the background
+setInterval(async () => {
+    if (!$('#modal').hidden || document.querySelector('ewt-install-dialog')) return;   // never in the middle of a flash
+    const before = state.status.firmware?.generated;
+    await loadStatus();
+    if (state.status.firmware?.generated && state.status.firmware.generated !== before) {
+        await loadCatalog(); render(); toast('Ny firmware er klar');
+    } else renderFirmware();
+}, 5 * 60 * 1000);
 if (state.status.mode === 'docker' && !state.status.setup_done) openWizard();

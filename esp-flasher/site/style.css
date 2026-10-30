@@ -130,6 +130,8 @@ esp-web-install-button [slot] { display: block; }
 .panel.help { border-radius: var(--radius); padding: 14px 20px; }
 
 footer { text-align: center; padding: 6px 0 34px; font-size: 13px; }
+.linkbtn { background: none; border: 0; padding: 0; font: inherit; color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.linkbtn:disabled { color: var(--muted); cursor: default; text-decoration: none; }
 
 /* modal */
 .modal { position: fixed; inset: 0; background: rgba(3, 7, 16, .72); backdrop-filter: blur(6px); display: grid; place-items: center;

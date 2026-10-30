@@ -8,3 +8,6 @@ configuration:
   wifi_password:
     name: Wi-Fi-kode
     description: Sendes til enheden over USB efter flash (Improv). Gemmes kun i Home Assistant og kommer med i dens backup.
+  live_firmware:
+    name: Hent ny firmware automatisk
+    description: Tjekker GitHub hver halve time, så ny firmware kommer frem uden at appen skal opdateres.

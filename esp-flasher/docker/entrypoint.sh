@@ -12,10 +12,13 @@ mkdir -p "$CONF"
 chmod 711 "$CONF" 2>/dev/null || true
 [ -f "$CONF/secrets.json" ] && chmod 600 "$CONF/secrets.json"
 
+# nginx serves /firmware/ through the symlink /tmp/fw; api.py (fwsync) points it at the newest firmware it has and
+# keeps it up to date from GitHub
 FW=/app/firmware
 if [ "$MODE" = docker ] && [ -f "$CONF/firmware/.local" ] && [ -f "$CONF/firmware/catalog.json" ]; then
-  FW="$CONF/firmware"; chmod -R a+rX "$FW"
+  FW="$CONF/firmware"; chmod -R a+rX "$FW"; export FLASHER_FW_LOCAL=1
 fi
+ln -sfn "$FW" /tmp/fw
 echo "ESP Flasher $FLASHER_VERSION – tilstand: $MODE, firmware fra $FW"
 
 if [ "$MODE" = docker ]; then
@@ -24,8 +27,8 @@ if [ "$MODE" = docker ]; then
 else
   TPL=/app/nginx-ha.conf
 fi
-sed "s#@FW@#$FW#g; s#@CONF@#$CONF#g" "$TPL" > /tmp/nginx.conf
-sed "s#@FW@#$FW#g" /app/nginx-common.inc.tpl > /app/nginx-common.inc 2>/dev/null || true
+sed "s#@FW@#/tmp/fw#g; s#@CONF@#$CONF#g" "$TPL" > /tmp/nginx.conf
+sed "s#@FW@#/tmp/fw#g" /app/nginx-common.inc.tpl > /app/nginx-common.inc 2>/dev/null || true
 
 # The API keeps running even if it crashes once
 ( while true; do python3 /app/api.py; echo "api stoppede – genstarter"; sleep 2; done ) &
