@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-30T16:54:42",
+  "generated": "2026-11-20T15:51:21",
   "firmwares": [
     {
       "id": "shs-h2-ld2410",
@@ -247,6 +247,62 @@
       "date": "2026-10-30",
       "manifest": "tesla-ble-proxy-c3/manifest.json",
       "sha256": "d5be18b0ca24"
+    },
+    {
+      "id": "wled-skaftsarv-c3",
+      "name": "WLED · IKEA SKAFTSÄRV",
+      "chip": "ESP32-C3",
+      "radars": [],
+      "kind": "wifi",
+      "kindLabel": "Wi-Fi · WLED",
+      "status": "Ikke testet på hardware endnu",
+      "summary": "WLED til IKEA SKAFTSÄRV-lampen ombygget med en ESP32-C3 SuperMini – styr de 30 LED'er fra telefonen og Home Assistant.",
+      "features": [
+        "WLED 16.0.1 – officiel udgivelse, uændret (EUPL-1.2)",
+        "Klar efter flash: 30 LED'er, WS281x, GRB på GPIO 2",
+        "Knap 1 (original knap) på GPIO 0 virker med det samme – knap 2 sættes på GPIO 1 i WLED",
+        "Wi-Fi sættes direkte i flash-dialogen (Improv)",
+        "Home Assistant finder den selv via WLED-integrationen",
+        "Opdateres derefter trådløst fra WLED (OTA)"
+      ],
+      "wiring": [
+        [
+          "LED data (brun)",
+          "GPIO2"
+        ],
+        [
+          "LED 5V (hvid)",
+          "5V"
+        ],
+        [
+          "LED GND (sort)",
+          "GND"
+        ],
+        [
+          "Knap 1 (IC-pin 3, valgfri)",
+          "GPIO0"
+        ],
+        [
+          "Knap 2 (IC-pin 4, valgfri)",
+          "GPIO1"
+        ]
+      ],
+      "after": "Vælg dit Wi-Fi i dialogen efter flash, og åbn WLED via IP'en (eller wled-xxxxxx.local). LED'erne (GPIO 2, 30 stk., GRB) og knap 1 (GPIO 0) virker uden opsætning. Bruger du knap 2: Indstillinger → LED Preferences → Buttons → tilføj knap på GPIO 1, type Pushbutton, og gem. Navnet kan ændres under Indstillinger → User Interface (Server description) og WiFi Setup (mDNS, fx \"skaftsarv\"). Home Assistant finder den selv under WLED.",
+      "changelog": [
+        {
+          "version": "16.0.1",
+          "date": "2026-11-20",
+          "title": "Første version",
+          "items": [
+            "Officiel WLED 16.0.1 til ESP32-C3 (kilde: github.com/wled/WLED, licens EUPL-1.2 – se NOTICE.txt)",
+            "Ombygning efter vejledningen github.com/simoneluconi/SKAFTSARV-to-WLED"
+          ]
+        }
+      ],
+      "version": "16.0.1",
+      "date": "2026-11-20",
+      "manifest": "wled-skaftsarv-c3/manifest.json",
+      "sha256": "f926b15fd4c8"
     }
   ]
 }

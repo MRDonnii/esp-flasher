@@ -4,9 +4,11 @@
   tools/publish.py            build esp-flasher/firmware (commit it, bump the app version; the image and the app use it)
   tools/publish.py --upload   also upload it to your own Docker host's <appdata>/firmware (needs tools/config.local.json -
                               see config.example.json; marks it ".local" so it wins over the firmware in the image)
+  tools/publish.py --only ID  rebuild only that firmware (comma-separated ids); the others stay exactly as published
 
 idf sources use the build folder's flash_args (bootloader, partition table, otadata and app as separate parts, so a flash
 without "Erase device" leaves NVS and the Zigbee pairing alone). manifest_url sources are downloaded as they are released.
+manifest sources are the same, read from a prebuilt manifest on this machine (plus any licence files listed in "files").
 esphome sources are compiled here as a GENERIC image: the API key is left out (Home Assistant sets one when the device is
 added), OTA has no key, and a source that uses !secret is refused - nothing personal ends up in a shared binary. The
 result is also scanned for the values in your ESPHome secrets.yaml (when found) before it is published.
@@ -15,6 +17,7 @@ import datetime
 import hashlib
 import json
 import os
+import pathlib
 import re
 import shutil
 import subprocess
@@ -121,7 +124,9 @@ def esphome_parts(fw, dest):
 
 
 def url_parts(fw, dest):
-    url = fw["source"]["url"]
+    src = fw["source"]
+    # "manifest": a prebuilt ESP Web Tools manifest on this machine (path relative to the repo, ~ allowed)
+    url = src["url"] if "url" in src else pathlib.Path(ROOT, os.path.expanduser(src["manifest"])).resolve().as_uri()
     manifest = json.load(urllib.request.urlopen(url, timeout=30))
     build = manifest["builds"][0]
     parts = []
@@ -130,16 +135,34 @@ def url_parts(fw, dest):
         with urllib.request.urlopen(urllib.parse.urljoin(url, p["path"]), timeout=120) as r, open(os.path.join(dest, name), "wb") as f:
             shutil.copyfileobj(r, f)
         parts.append({"path": name, "offset": p["offset"]})
+    for name in src.get("files", []):   # licence/notice files that must travel with the binary
+        with urllib.request.urlopen(urllib.parse.urljoin(url, name), timeout=120) as r, open(os.path.join(dest, os.path.basename(name)), "wb") as f:
+            shutil.copyfileobj(r, f)
     extra = {k: manifest[k] for k in ("home_assistant_domain", "funding_url") if k in manifest}
     return build["chipFamily"], manifest.get("version", "0"), datetime.date.today().isoformat(), parts, extra
 
 
 def main():
     cfg = json.load(open(os.path.join(ROOT, "firmwares.json"), encoding="utf-8"))
-    shutil.rmtree(OUT, ignore_errors=True)
-    os.makedirs(OUT)
+    # --only id1,id2: rebuild just those; every other firmware keeps its published folder and catalog entry as-is
+    only = sys.argv[sys.argv.index("--only") + 1].split(",") if "--only" in sys.argv else None
+    old = {}
+    if only:
+        old = {f["id"]: f for f in json.load(open(os.path.join(OUT, "catalog.json"), encoding="utf-8"))["firmwares"]}
+        missing = [fw["id"] for fw in cfg["firmwares"] if fw["id"] not in only and fw["id"] not in old]
+        if missing:
+            sys.exit(f"--only: {', '.join(missing)} er ikke udgivet endnu - tag dem med i --only")
+        for name in os.listdir(OUT):
+            if os.path.isdir(os.path.join(OUT, name)) and (name in only or name not in [fw["id"] for fw in cfg["firmwares"]]):
+                shutil.rmtree(os.path.join(OUT, name))
+    else:
+        shutil.rmtree(OUT, ignore_errors=True)
+        os.makedirs(OUT)
     catalog = []
     for fw in cfg["firmwares"]:
+        if only and fw["id"] not in only:
+            catalog.append(old[fw["id"]])
+            continue
         dest = os.path.join(OUT, fw["id"])
         os.makedirs(dest)
         kind = fw["source"]["type"]

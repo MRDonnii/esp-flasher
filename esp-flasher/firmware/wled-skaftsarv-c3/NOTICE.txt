@@ -1,0 +1,21 @@
+WLED 16.0.1 for ESP32-C3 (IKEA SKAFTSARV lamp conversion)
+==========================================================
+
+WLED_16.0.1_ESP32-C3.bin
+  Unmodified official release binary of WLED 16.0.1 (environment esp32c3).
+  Copyright (c) 2016-present Christian Schwinne and individual WLED contributors.
+  Licensed under the European Union Public Licence (EUPL) v. 1.2 or later -
+  see LICENSE-EUPL-1.2.txt.
+  Binary: https://github.com/wled/WLED/releases/tag/v16.0.1
+  Corresponding source code: https://github.com/wled/WLED/tree/v16.0.1
+    (commit 29b389df1c1aaec6ff53aea742d17063b985906c)
+
+bootloader.bin, partitions.bin, boot_app0.bin
+  Boot files used by the official WLED web installer
+  (https://github.com/wled/WLED-WebInstaller, bin/boot/, Apache License 2.0;
+  the bootloader and boot_app0 are built from Espressif's ESP-IDF / Arduino-ESP32,
+  Apache License 2.0). bootloader.bin is bootloader_c3_8m.bin with the flash-size
+  field set to 4MB and its SHA-256 recomputed - the same change the WLED web
+  installer makes in the browser. partitions.bin is partitions_c3_4m.bin.
+
+Wiring guide for the lamp (no code): https://github.com/simoneluconi/SKAFTSARV-to-WLED
