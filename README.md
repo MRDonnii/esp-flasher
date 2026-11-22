@@ -82,3 +82,9 @@ tools/deploy.sh --test 8444  # en separat testcontainer med tomme indstillinger
 - Kan slås fra: HA-optionen `live_firmware`, eller Docker-variablen `FLASHER_FIRMWARE_URL=off`.
 
 **Ændringer i selve siden eller appen:** bump `version` i `esp-flasher/config.yaml`, og skriv i `esp-flasher/CHANGELOG.md`. Så tilbyder Home Assistant en opdatering.
+
+## Licens
+
+ESP Flasher er udgivet under [PolyForm Noncommercial License 1.0.0](LICENSE): fri brug til ikke-kommercielle formål (privat, hjem, hobby, undervisning og foreninger). Kommerciel brug kræver skriftlig tilladelse fra ophavsmanden.
+
+De firmwarer, der kan flashes, og ESP Web Tools er andres værker og er **ikke** omfattet. De har deres egne licenser (WLED: EUPL-1.2, ESPHome-firmwarer: GPL-3.0, ESP Web Tools: Apache-2.0). Se [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
