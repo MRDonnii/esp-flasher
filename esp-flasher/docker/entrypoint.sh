@@ -1,8 +1,9 @@
 #!/bin/sh
 # ESP Flasher start-up. As a Home Assistant app (/data/options.json exists) it serves Ingress on 8099 and takes its
 # settings from the app configuration; standalone (Docker/Unraid) it serves HTTPS on 443 with a local CA and asks for
-# its settings on the first visit (setup page). Firmware ships in the image (/app/firmware); a maintainer can serve
-# their own builds from <config>/firmware by putting a file named .local there (tools/publish.py does).
+# its settings on the first visit (setup page). No firmware ships in the image: the profiles come from the catalogs
+# set up by the owner (fwsync.py). A maintainer can serve their own builds from <config>/firmware by putting a file
+# named .local there.
 set -e
 if [ -f /data/options.json ]; then MODE=ha; CONF=/data; else MODE=docker; CONF=/config; fi
 FLASHER_VERSION=$(cat /app/VERSION 2>/dev/null || echo dev)
@@ -12,9 +13,10 @@ mkdir -p "$CONF"
 chmod 711 "$CONF" 2>/dev/null || true
 [ -f "$CONF/secrets.json" ] && chmod 600 "$CONF/secrets.json"
 
-# nginx serves /firmware/ through the symlink /tmp/fw; api.py (fwsync) points it at the newest firmware it has and
-# keeps it up to date from GitHub
-FW=/app/firmware
+# nginx serves /firmware/ through the symlink /tmp/fw; api.py (fwsync) points it at the newest mirror of the
+# configured catalogs and keeps it up to date. Until then it is an empty catalog.
+FW=/tmp/fw-empty
+mkdir -p "$FW" && echo '{"generated": "", "firmwares": []}' > "$FW/catalog.json" && chmod -R a+rX "$FW"
 if [ "$MODE" = docker ] && [ -f "$CONF/firmware/.local" ] && [ -f "$CONF/firmware/catalog.json" ]; then
   FW="$CONF/firmware"; chmod -R a+rX "$FW"; export FLASHER_FW_LOCAL=1
 fi

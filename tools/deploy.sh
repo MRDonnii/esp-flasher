@@ -1,8 +1,8 @@
 #!/bin/bash
 # Build the ESP Flasher image on your own Docker host (e.g. Unraid) and (re)start the container, with rollback.
 # Reads tools/config.local.json (copy config.example.json). Not needed for the Home Assistant app.
-#   tools/deploy.sh               build + swap the container, then upload your firmware builds (publish.py --upload)
-#   tools/deploy.sh --no-fw       only the container
+#   tools/deploy.sh               build + swap the container (no firmware: profiles come from the catalogs set up
+#                                 on the page, or from your profile repo's own upload tool)
 #   tools/deploy.sh --test 8444   a separate test container on port 8444 with its own empty settings (/tmp)
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -20,7 +20,7 @@ SSH=(ssh -i "$KEY" -o StrictHostKeyChecking=no "$HOST")
 VERSION=$(sed -n 's/^version: *"\{0,1\}\([^"]*\)"\{0,1\}/\1/p' esp-flasher/config.yaml)
 
 echo "Sender ESP Flasher $VERSION til $WEBHOST ..."
-tar -C esp-flasher -cf - Dockerfile docker site firmware \
+tar -C esp-flasher -cf - Dockerfile docker site \
   | "${SSH[@]}" 'rm -rf /tmp/esp-flasher-build && mkdir -p /tmp/esp-flasher-build && tar -C /tmp/esp-flasher-build -xf -'
 
 "${SSH[@]}" bash -s <<EOF
@@ -75,8 +75,9 @@ EOF
   <Icon>https://raw.githubusercontent.com/esphome/esphome-docs/current/images/logo.svg</Icon>
   <Config Name="HTTPS" Target="443" Default="8443" Mode="tcp" Type="Port" Display="always" Required="true">$PORT</Config>
   <Config Name="Config" Target="/config" Default="/mnt/user/appdata/esp-flasher" Mode="rw" Type="Path" Display="always" Required="true">$APPDATA</Config>
+  <Config Name="Profil-katalog (valgfrit)" Target="FLASHER_CATALOG_URL" Default="" Description="Et ekstra profil-katalog, fx https://github.com/EJER/REPO/tree/main/profiles - kan også sættes under Indstillinger på siden" Mode="" Type="Variable" Display="advanced" Required="false"></Config>
+  <Config Name="Token til profil-katalog (valgfrit)" Target="FLASHER_CATALOG_TOKEN" Default="" Description="Kun til et privat GitHub-repo: fine-grained token med Contents: Read-only til netop det repo" Mode="" Type="Variable" Display="advanced" Required="false" Mask="true"></Config>
   <Config Name="Ekstra adresser i certifikatet" Target="FLASHER_HOSTS" Default="" Description="Fx IP:192.168.1.10,DNS:nas.local - kan også skrives på opsætningssiden" Mode="" Type="Variable" Display="advanced" Required="false">$HOSTS</Config>
 </Container>
 EOF
 
-[ "${1:-}" = "--no-fw" ] || python3 tools/publish.py --upload

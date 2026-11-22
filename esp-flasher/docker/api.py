@@ -5,10 +5,15 @@ Nothing personal is built into the image. On the first visit the page asks for a
 devices should join and the address(es) the flasher is opened on. They are stored on the data volume:
 
   /config/settings.json   name, addresses, Home Assistant link (not secret, shown on the page)
-  /config/secrets.json    admin code (PBKDF2 hash), Wi-Fi name/password, session key - mode 600, never served by nginx
+  /config/secrets.json    admin code (PBKDF2 hash), Wi-Fi name/password, session key, profile catalogs (address +
+                          token) - mode 600, never served by nginx
 
 As a Home Assistant app (FLASHER_MODE=ha) there is no setup page or admin code: Home Assistant's login protects
-the page (Ingress), and name/Wi-Fi come from the app's Configuration tab (/data/options.json, kept by the Supervisor).
+the page (Ingress), and name/Wi-Fi/catalogs come from the app's Configuration tab (/data/options.json, kept by the
+Supervisor).
+
+No firmware is built in. The profiles to flash come from the catalogs configured here (fwsync.py fetches them on the
+server, with the token for a private repo; the browser never sees a token).
 
 Runs on 127.0.0.1:8081 behind nginx (/api/). Python standard library only.
 """
@@ -98,17 +103,31 @@ def secret_store():
     return _read(SECRETS, {})
 
 
-def firmware_url():
-    """Where new firmware is fetched from: the public catalog on GitHub unless turned off."""
-    if HA_MODE:
-        return fwsync.DEFAULT_URL if ha_options().get("live_firmware", True) else ""
-    url = os.environ.get("FLASHER_FIRMWARE_URL", fwsync.DEFAULT_URL).strip()
-    return "" if url.lower() in ("", "off", "0", "false", "no") else url
+def env_catalog():
+    """Docker: one extra catalog from FLASHER_CATALOG_URL (+ FLASHER_CATALOG_TOKEN), e.g. from an Unraid template."""
+    url = os.environ.get("FLASHER_CATALOG_URL", "").strip()
+    return [{"url": url, "token": os.environ.get("FLASHER_CATALOG_TOKEN", "")}] if url else []
+
+
+_config_error = {"text": ""}
+
+
+def firmware_sources():
+    """The profile catalogs to mirror: the app options (HA) or the saved settings + the environment (Docker)."""
+    items = ha_options().get("catalogs") if HA_MODE else (secret_store().get("catalogs") or []) + env_catalog()
+    try:
+        _config_error["text"] = ""
+        return fwsync.clean_sources(items if isinstance(items, list) else [])
+    except ValueError as err:
+        _config_error["text"] = str(err)
+        print("Katalog-opsætning:", err, flush=True)
+        return []
 
 
 def firmware_status():
     st = fwsync.state
-    return {"source": st["source"], "live": st["live"], "generated": st["generated"], "error": st["error"],
+    return {"source": st["source"], "live": st["live"], "generated": st["generated"],
+            "error": _config_error["text"] or st["error"], "catalogs": st["catalogs"],
             "checked": int(st["checked"]), "changed": int(st["changed"])}
 
 
@@ -279,7 +298,12 @@ class Api(BaseHTTPRequestHandler):
             if not self.require_login(sec):
                 return
             return self.send(200, {**st, "wifi_ssid": sec.get("wifi_ssid", ""),
-                                   "has_wifi_password": bool(sec.get("wifi_password"))})
+                                   "has_wifi_password": bool(sec.get("wifi_password")),
+                                   # addresses only: a saved token is never sent back to the browser
+                                   "catalogs": [{"url": c["url"], "has_token": bool(c.get("token"))}
+                                                for c in sec.get("catalogs") or []],
+                                   "env_catalog": fwsync.label(fwsync.normalize_url(env_catalog()[0]["url"]))
+                                   if env_catalog() else ""})
         if self.path == "/api/wifi":
             if not self.require_login(sec):
                 return
@@ -376,6 +400,20 @@ class Api(BaseHTTPRequestHandler):
                 sec["wifi_password"] = text(data["wifi_password"], "Wi-Fi-kode", 64)
             if data.get("clear_wifi_password"):
                 sec["wifi_password"] = ""
+            if "catalogs" in data:
+                if not isinstance(data["catalogs"], list):
+                    raise ValueError("catalogs skal være en liste")
+                old = {c["url"]: c.get("token", "") for c in sec.get("catalogs") or []}
+                items = []
+                for c in data["catalogs"]:
+                    if not isinstance(c, dict) or not str(c.get("url") or "").strip():
+                        continue
+                    url = fwsync.normalize_url(c["url"])
+                    token = str(c.get("token") or "").strip()
+                    if not token and c.get("keep_token"):   # empty field = keep the token saved for this address
+                        token = old.get(url, "")
+                    items.append({"url": url, "token": token})
+                sec["catalogs"] = fwsync.clean_sources(items)
             if data.get("new_admin_code"):
                 if not check_code(str(data.get("admin_code") or ""), sec["admin_hash"]):
                     raise ValueError("Den nuværende adminkode er forkert")
@@ -389,6 +427,8 @@ class Api(BaseHTTPRequestHandler):
         _write(SETTINGS, st, 0o644)
         if st.get("hosts") != old_hosts:
             threading.Thread(target=issue_certificate, daemon=True).start()
+        if "catalogs" in data:
+            fwsync.configure(firmware_sources())
         cookie = self.session_cookie(make_session(sec)) if data.get("new_admin_code") else None
         self.send(200, {"ok": True}, cookie=cookie)
 
@@ -404,11 +444,12 @@ class Api(BaseHTTPRequestHandler):
                 os.remove(p)
             except OSError:
                 pass
+        fwsync.configure(firmware_sources())   # saved catalogs are gone with the secrets
         self.send(200, {"ok": True}, cookie=self.session_cookie("", 0))
 
 
 if __name__ == "__main__":
     os.makedirs(CONFIG, exist_ok=True)
-    fwsync.start(firmware_url(), local_override=os.environ.get("FLASHER_FW_LOCAL") == "1")
+    fwsync.start(firmware_sources(), local_override=os.environ.get("FLASHER_FW_LOCAL") == "1")
     port = int(os.environ.get("FLASHER_API_PORT", "8081"))
     ThreadingHTTPServer(("127.0.0.1", port), Api).serve_forever()

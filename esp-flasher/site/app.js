@@ -1,4 +1,4 @@
-// ESP Flasher UI (Claude AI, 2026-10-30): firmware catalog with one ESP Web Tools button per firmware, first-run setup
+// ESP Flasher UI (Claude AI, 2026-10-30; profile catalogs 2026-11-22): the owner's profiles with one ESP Web Tools button each, first-run setup
 // (standalone), settings, and "Send Wi-Fi" that hands the saved Wi-Fi to a freshly flashed device over USB (Improv).
 // All URLs are relative, so the page works both on its own HTTPS port and inside Home Assistant (Ingress).
 import {provisionWifi} from './improv.js';
@@ -131,14 +131,16 @@ function renderHeader() {
     renderFirmware();
 }
 
-// Firmware comes from GitHub while the app runs (api: fwsync), so a new build shows up without updating the app
+// Profiles come from the owner's own catalogs (api: fwsync, fetched on the server), so a new build shows up by itself
 function renderFirmware() {
     const f = state.status.firmware;
     $('#foot-fw').hidden = !f;
     if (!f) return;
     const built = f.generated ? new Date(f.generated).toLocaleString('da-DK', {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'}) : '';
-    const src = {github: 'hentet fra GitHub', app: 'fra appen', local: 'lokal build'}[f.source] || '';
-    $('#fw-text').textContent = [built && `Firmware fra ${built}`, src, f.live && 'opdateres automatisk'].filter(Boolean).join(' · ');
+    const n = (f.catalogs || []).length;
+    const src = {catalog: n === 1 ? `fra ${f.catalogs[0]}` : `fra ${n} kataloger`, local: 'lokal build'}[f.source] || '';
+    $('#fw-text').textContent = !f.live && f.source !== 'local' ? 'Ingen profil-kataloger sat op'
+        : [built && `Profiler fra ${built}`, src, f.live && 'opdateres automatisk'].filter(Boolean).join(' · ');
     $('#fw-text').title = f.error ? `Sidste tjek fejlede: ${f.error}`
         : f.checked ? `Sidst tjekket ${new Date(f.checked * 1000).toLocaleTimeString('da-DK', {hour: '2-digit', minute: '2-digit'})}` : '';
     $('#fw-check').hidden = !f.live;
@@ -159,9 +161,9 @@ $('#fw-check').addEventListener('click', async (ev) => {
     try {
         const r = await api('api/firmware/check', {method: 'POST'});
         state.status.firmware = r;
-        if (r.updated) { await loadCatalog(); render(); toast('Ny firmware er hentet'); }
-        else if (r.error) toast(`Kunne ikke tjekke GitHub: ${r.error}`, 'bad');
-        else toast('Du har den nyeste firmware');
+        if (r.updated) { await loadCatalog(); render(); toast('Nye profiler er hentet'); }
+        else if (r.error) toast(`Kunne ikke hente kataloget: ${r.error}`, 'bad');
+        else toast('Du har de nyeste profiler');
     } catch (err) { toast(err.message, 'bad'); }
     b.disabled = false; b.textContent = 'Søg efter ny';
     renderFirmware();
@@ -245,11 +247,28 @@ function card(fw) {
     </article>`;
 }
 
+// ESP Flasher has no firmware of its own: with no profiles yet, explain where they come from
+function noProfiles() {
+    const f = state.status.firmware || {};
+    const where = isHa()
+        ? `<b>Indstillinger → Apps → ESP Flasher → Konfiguration → Profil-kataloger</b>, og genstart appen`
+        : `<a href="#" data-open-settings>indstillingerne</a> (⚙️ øverst) under <b>Profil-kataloger</b>`;
+    const err = f.live && f.error ? `<p class="form-error">Kataloget kunne ikke hentes: ${esc(f.error)}</p>` : '';
+    const wait = f.live && !f.error ? `<p class="muted">Kataloget hentes … tryk <b>Søg efter ny</b> nederst, hvis det tager tid.</p>` : '';
+    return `<div class="panel no-profiles"><h3>Ingen profiler endnu</h3>
+        <p>ESP Flasher har ingen firmware med. Du laver selv dine profiler (firmware + beskrivelse) og lægger dem i et
+        <b>profil-katalog</b>: en mappe med <code>catalog.json</code> og én undermappe pr. profil, fx i dit eget GitHub-repo.</p>
+        <p>Tilføj katalogets adresse i ${where}. Er repoet privat, så tilføj også et token, der kun kan læse netop det repo.
+        Tokenet bliver på serveren og sendes aldrig til browseren.</p>
+        <p class="muted">Formatet er beskrevet i <a href="https://github.com/MRDonnii/esp-flasher#profil-kataloger" target="_blank" rel="noopener">README'en</a>.</p>
+        ${wait}${err}</div>`;
+}
+
 function renderList() {
     const items = state.list.filter((f) => (state.chip === 'any' || f.chip === state.chip)
         && (state.kind === 'any' || f.kind === state.kind));
-    $('#list').innerHTML = items.map(card).join('');
-    $('#empty').hidden = items.length > 0;
+    $('#list').innerHTML = state.list.length ? items.map(card).join('') : noProfiles();
+    $('#empty').hidden = items.length > 0 || !state.list.length;
 }
 
 function render() {
@@ -367,7 +386,7 @@ function openWizard() {
              if (a !== b) throw new Error('De to koder er ikke ens');
              data.admin_code = a;
          }},
-        {title: 'Wi-Fi til nye enheder 📶', body: () => `<p>Wi-Fi-enheder (fx Qlima Control) kan få dit Wi-Fi automatisk efter flash.
+        {title: 'Wi-Fi til nye enheder 📶', body: () => `<p>Wi-Fi-enheder (fx ESPHome og WLED) kan få dit Wi-Fi automatisk efter flash.
             Det er valgfrit – du kan også skrive det i dialogen hver gang.</p>
             ${field('w-ssid', 'Wi-Fi-navn (SSID)', {value: data.wifi_ssid, placeholder: 'Dit 2,4 GHz-netværk', hint: 'ESP-enheder kan kun 2,4 GHz.'})}
             ${field('w-pass', 'Wi-Fi-kode', {type: 'password', value: data.wifi_password})}`,
@@ -430,8 +449,9 @@ async function openSettings() {
         const s = state.status;
         openModal(`<h2 id="modal-title">⚙️ Indstillinger</h2>
             <p>Som Home Assistant-app laves indstillingerne i Home Assistant:<br>
-            <b>Indstillinger → Apps → ESP Flasher → Konfiguration</b> (navn, Wi-Fi-navn og Wi-Fi-kode).</p>
+            <b>Indstillinger → Apps → ESP Flasher → Konfiguration</b> (navn, Wi-Fi og profil-kataloger).</p>
             <dl class="kv"><dt>Navn</dt><dd>${esc(s.name || '–')}</dd><dt>Wi-Fi</dt><dd>${esc(s.wifi_ssid || 'ikke sat')}</dd>
+            <dt>Kataloger</dt><dd>${esc((s.firmware?.catalogs || []).join(', ') || 'ingen')}</dd>
             <dt>Version</dt><dd>${esc(s.version || '–')}</dd></dl>
             <p class="muted">Adgang styres af Home Assistants eget login. USB-flash kræver, at Home Assistant er åbnet via https.</p>
             <div class="modal-actions"><span></span><button class="btn primary" data-close>OK</button></div>`);
@@ -449,6 +469,14 @@ async function openSettings() {
           </div>
           ${field('s-hosts', 'Adresse(r) til certifikatet', {value: (cfg.hosts || []).join(', '), hint: 'Ændres de, laves et nyt servercertifikat (samme CA).'})}
           ${field('s-ha', 'Home Assistant (valgfri)', {value: cfg.ha_url})}
+          <fieldset class="catalogs"><legend>Profil-kataloger</legend>
+            <p class="muted">Hvor firmware-profilerne hentes fra: mappen med <code>catalog.json</code>, fx
+            <code>https://github.com/EJER/REPO/tree/main/profiles</code>. Token kun til et privat GitHub-repo
+            (fine-grained, kun <i>Contents: Read-only</i> til det ene repo). Et gemt token vises aldrig igen.</p>
+            <div id="s-cats"></div>
+            <button type="button" class="linkbtn" id="s-cat-add">+ Tilføj katalog</button>
+            ${cfg.env_catalog ? `<p class="muted">Fra containerens miljø (FLASHER_CATALOG_URL): ${esc(cfg.env_catalog)}</p>` : ''}
+          </fieldset>
           <details><summary>Skift adminkode</summary>
             <div class="grid2">${field('s-old', 'Nuværende kode', {type: 'password'})}${field('s-new', 'Ny kode (mindst 6 tegn)', {type: 'password'})}</div>
           </details>
@@ -460,17 +488,34 @@ async function openSettings() {
             <button class="btn primary">Gem</button>
           </div>
         </form>`, {wide: true});
+    let rows = 0;
+    const addCat = (c = {}) => {
+        const i = rows++;
+        $('#s-cats', el).insertAdjacentHTML('beforeend', `<div class="grid2 cat-row" data-row="${i}">
+            ${field(`s-cat-url-${i}`, 'Adresse', {value: c.url || '', placeholder: 'https://github.com/EJER/REPO/tree/main/profiles'})}
+            ${field(`s-cat-tok-${i}`, 'Token (kun privat repo)', {type: 'password', placeholder: c.has_token ? '•••••• gemt – skriv nyt for at ændre' : 'tomt = offentligt',
+                attrs: 'autocomplete="off"'})}</div>`);
+        $(`[data-row="${i}"]`, el).dataset.hasToken = c.has_token ? '1' : '';
+    };
+    (cfg.catalogs || []).forEach(addCat);
+    if (!(cfg.catalogs || []).length) addCat();
+    $('#s-cat-add', el).addEventListener('click', () => addCat());
     $('#f-set', el).addEventListener('submit', async (ev) => {
         ev.preventDefault();
         const body = {
             name: $('#s-name', el).value, wifi_ssid: $('#s-ssid', el).value, ha_url: $('#s-ha', el).value,
             hosts: $('#s-hosts', el).value.split(/[,\s]+/).filter(Boolean),
+            catalogs: [...el.querySelectorAll('.cat-row')].map((r) => {
+                const i = r.dataset.row, token = $(`#s-cat-tok-${i}`, el).value.trim();
+                return {url: $(`#s-cat-url-${i}`, el).value.trim(), token, keep_token: !token && !!r.dataset.hasToken};
+            }).filter((c) => c.url),
         };
         if ($('#s-pass', el).value) body.wifi_password = $('#s-pass', el).value;
         if ($('#s-new', el).value) { body.new_admin_code = $('#s-new', el).value; body.admin_code = $('#s-old', el).value; }
         try {
             await api('api/settings', {method: 'PUT', body});
             await loadStatus();
+            await loadCatalog();
             closeModal();
             render();
             toast('Indstillingerne er gemt');
@@ -482,7 +527,7 @@ async function openSettings() {
     });
     $('#s-reset', el).addEventListener('click', () => {
         const r = openModal(`<h2 id="modal-title">Nulstil flasheren?</h2>
-            <p>Navn, adminkode, Wi-Fi og adresser slettes, og opsætningen starter forfra. Firmware og certifikat bevares.</p>
+            <p>Navn, adminkode, Wi-Fi, adresser og profil-kataloger (med tokens) slettes, og opsætningen starter forfra. Certifikatet bevares.</p>
             <form id="f-reset">${field('r-code', 'Adminkode', {type: 'password'})}<p class="form-error" hidden></p>
             <div class="modal-actions"><button type="button" class="btn" data-close>Annullér</button>
             <button class="btn danger">Nulstil</button></div></form>`);

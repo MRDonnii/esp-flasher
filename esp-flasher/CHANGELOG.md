@@ -1,5 +1,17 @@
 # Ændringer
 
+## 3.0.0
+
+- **Ingen firmware følger med længere.** Du lægger dine egne profiler i et profil-katalog og sætter det op i appen.
+  - Konfiguration: **Profil-kataloger** med adresse og evt. token til et privat GitHub-repo (fine-grained, kun læseadgang).
+  - Docker: under ⚙️ Indstillinger, eller med `FLASHER_CATALOG_URL` og `FLASHER_CATALOG_TOKEN`.
+  - Alt hentes på serveren. Tokenet sendes aldrig til browseren.
+  - Flere kataloger vises samlet.
+- Siden forklarer, hvad du skal gøre, når der ikke er nogen profiler endnu.
+- Profiler, der stammer fra tidligere versioner af appen, fjernes, når appen opdateres.
+- "Hent ny firmware automatisk" er fjernet. Kataloger tjekkes altid hver halve time.
+- Formatet for katalog og manifest er beskrevet i README'en.
+
 ## 2.1.0
 
 - Ny firmware kommer frem af sig selv. Appen tjekker GitHub hver halve time og henter kun det, der er ændret.
